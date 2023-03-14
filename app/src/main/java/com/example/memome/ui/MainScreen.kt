@@ -3,7 +3,9 @@ package com.example.memome.ui
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -21,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.burnoutcrew.reorderable.*
 
 data class BottomMenuItem(val label: String, val icon: ImageVector)
 data class Memo(var title: String, var memo: String, var selected: Boolean)
@@ -29,13 +32,13 @@ data class Memo(var title: String, var memo: String, var selected: Boolean)
 @Composable
 fun MyMainScreen() {
     val scaffoldState = rememberScaffoldState()
-    val memos = (1..10).map {
+    var memos = (1..10).map {
         Memo(
             title = "title ${it.toString()}",
             memo = "memo ${it.toString()}",
             selected = false
         )
-    }
+    }.toMutableList()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -45,6 +48,7 @@ fun MyMainScreen() {
     ) {
         val paddingOfLeftColumn = PaddingValues(start = 16.dp, top = 16.dp, end = 8.dp, bottom = 0.dp)
         val paddingOfRightColumn = PaddingValues(start = 8.dp, top = 16.dp, end = 16.dp, bottom = 0.dp)
+        val reorderState = rememberReorderState()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,7 +57,9 @@ fun MyMainScreen() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            /*
             LazyVerticalGrid(
+                state = reorderState.,
                 columns = GridCells.Fixed(2),
                 content = {
                     items(memos.size) { index ->
@@ -85,6 +91,52 @@ fun MyMainScreen() {
                     }
                 }
             )
+             */
+            LazyColumn(
+                state = reorderState.listState,
+                modifier = Modifier
+                    .reorderable(
+                        state = reorderState,
+                        onMove = { from, to ->
+                            memos.move(from.index, to.index)
+                        }
+                    )
+            ) {
+                items(memos.size) { index ->
+                         Card(
+                            backgroundColor = Color.Gray,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = 10.dp,
+                                    top = 10.dp,
+                                    end = 10.dp,
+                                    bottom = 0.dp,
+                                    //paddingValues = if (index % 2 == 0) paddingOfLeftColumn else paddingOfRightColumn
+                                )
+                                .clickable {}
+                                .detectReorderAfterLongPress(reorderState)
+                                .draggedItem(reorderState.offsetByIndex(index))
+                                .aspectRatio(1F)
+                                .border(
+                                    width = 5.dp,
+                                    color = Color.White,
+                                ),
+                            elevation = 8.dp,
+                            onClick = { memos[index].selected = true }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(7.dp)
+                            ) {
+                                Text(text = memos[index].title)
+                                Text(text = memos[index].memo)
+                                Text(text = if (memos[index].selected) "Selected" else "")
+                            }
+                        }
+                }
+
+            }
         }
     }
 }
